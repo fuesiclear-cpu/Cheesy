@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Cheesy - Game Launcher</title>
-    <!-- Win Screen External Stylesheet -->
+    <!-- Win screen external stylesheet -->
     <link rel="stylesheet" href="win-style.css">
     <style>
         :root {
@@ -29,6 +29,7 @@
             overflow-y: auto;
             user-select: none;
             -webkit-user-select: none;
+            touch-action: manipulation;
         }
         .container { width: 100%; max-width: 600px; padding: 20px; text-align: center; position: relative; }
         .screen { display: none; flex-direction: column; align-items: center; gap: 20px; animation: fadeIn 0.3s ease; width: 100%; }
@@ -47,7 +48,7 @@
         .estimate.done { color: var(--success); animation: none; }
         input[type="text"] { width: 100%; max-width: 300px; padding: 14px 18px; border: 2px solid #334155; border-radius: 12px; background: #1e293b; color: #fff; font-size: 1rem; outline: none; transition: border-color 0.2s; text-align: center; }
         input[type="text"]:focus { border-color: var(--accent); }
-        button { padding: 14px 32px; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s; letter-spacing: 0.01em; min-width: 140px; }
+        button { padding: 14px 32px; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s; letter-spacing: 0.01em; min-width: 140px; touch-action: manipulation; }
         button:active { transform: scale(0.96); }
         button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
         .btn-primary { background: var(--accent); color: #1a1a2e; }
@@ -57,7 +58,7 @@
         .btn-outline { background: transparent; border: 2px solid #475569; color: #cbd5e1; }
         .btn-outline:hover:not(:disabled) { border-color: #94a3b8; color: #fff; }
         .btn-skip { background: #22c55e; color: #000; font-size: 0.75rem; padding: 6px 12px; min-width: auto; font-weight: 700; width: 100%; }
-        .btn-skip:hover:not(:disabled) { background: #4ade80; box-shadow: 0 0 15px rgba(34,197,94,0.5); }
+        .btn-skip:hover:not(:disabled) { background: #4ade80; }
         .progress-bar { width: 100%; max-width: 350px; height: 8px; background: #334155; border-radius: 10px; overflow: hidden; }
         .progress-bar .fill { height: 100%; background: var(--accent); border-radius: 10px; transition: width 0.3s ease; }
         .progress-bar.danger .fill { background: var(--danger); }
@@ -84,14 +85,22 @@
         .cheese-counter { font-size: 1.2rem; color: #fbbf24; font-weight: 600; }
         .freeze-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 10; border-radius: 16px; }
         .freeze-overlay.hidden { display: none; }
+        /* Obby styles */
         .obby-area { position: relative; width: 100%; max-width: 500px; height: 350px; background: #1e1b4b; border: 2px solid #7c3aed; border-radius: 16px; overflow: hidden; }
         .player-obby { position: absolute; width: 30px; height: 30px; background: #fbbf24; border-radius: 50%; z-index: 3; transition: left 0.05s,bottom 0.05s; }
         .cheese-token { position: absolute; font-size: 1.5rem; cursor: pointer; z-index: 2; }
         .obby-platform { position: absolute; background: #4c1d95; border-radius: 4px; }
         .obby-finish { position: absolute; width: 40px; height: 40px; background: #22c55e; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #000; z-index: 2; }
+        .mobile-controls { display: flex; gap: 10px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
+        .mobile-controls button { padding: 15px 20px; font-size: 1.5rem; background: #7c3aed; color: #fff; border: none; border-radius: 12px; min-width: 60px; }
         .escape-room-clue { background: #1e293b; padding: 12px; border-radius: 8px; text-align: left; margin: 8px 0; color: #cbd5e1; }
         .long-word-display { font-size: 1.2rem; color: #fbbf24; word-break: break-all; background: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #334155; max-width: 100%; }
-        @media (max-width:600px) { .cheese-game-area,.obby-area { height: 280px; } .cheese { font-size: 2rem; } .admin-panel { bottom: 10px; right: 10px; min-width: 180px; padding: 12px; } button { padding: 12px 24px; font-size: 0.9rem; } }
+        @media (max-width:600px) {
+            .cheese-game-area,.obby-area { height: 280px; }
+            .cheese { font-size: 2rem; }
+            .admin-panel { bottom: 10px; right: 10px; min-width: 180px; padding: 12px; }
+            button { padding: 12px 24px; font-size: 0.9rem; }
+        }
     </style>
 </head>
 <body>
@@ -248,6 +257,11 @@
             <div class="obby-area" id="obby-area">
                 <div class="player-obby" id="player-obby" style="bottom:10px;left:10px;"></div>
             </div>
+            <div class="mobile-controls">
+                <button id="btn-left">⬅️</button>
+                <button id="btn-jump">⬆️ JUMP</button>
+                <button id="btn-right">➡️</button>
+            </div>
             <p style="color:#94a3b8;font-size:0.8rem;">← → or AD | SPACE to jump (costs 1 🧀)</p>
         </div>
         <!-- Level 2 Loading -->
@@ -265,6 +279,7 @@
             <p style="color:#fbbf24;">Enter the 5-letter code (lowercase):</p>
             <input type="text" id="escape-input" maxlength="5" placeholder="code">
             <button class="btn-primary" id="btn-escape-submit">Submit</button>
+            <button class="btn-outline" id="btn-hint-level2" style="margin-top:10px;">💡 Show Hint</button>
             <p id="escape-feedback" style="color:#ef4444;display:none;">Wrong code!</p>
         </div>
         <!-- Level 3 Loading -->
@@ -308,7 +323,7 @@
             <div class="spinner"></div>
             <p>Opening/Closing Shop...</p>
         </div>
-        <!-- Victory / Win Screen (uses external CSS & JS) -->
+        <!-- Victory (uses external win-style.css) -->
         <div class="screen" id="screen-win" data-screen-name="Victory!">
             <div class="win-container">
                 <div class="stars-row">⭐ 🌟 ⭐ 🌟 ⭐</div>
@@ -333,7 +348,7 @@
                 <div class="gg-iframe-container" id="gg-iframe-container">
                     <iframe class="gg-iframe" id="gg-iframe" src="" title="GG Content"></iframe>
                 </div>
-                <p style="color:#64748b;margin-top:20px;font-size:0.9rem;">🧀 Cheesy - Thanks for playing!</p>
+                <p style="color:#64748b;margin-top:20px;">🧀 Cheesy - Thanks for playing!</p>
             </div>
         </div>
     </div>
@@ -350,7 +365,9 @@
         <p class="skip-info">Drag to move | Skip = full time added</p>
     </div>
 
-    <!-- Main Game Script -->
+    <!-- Win Screen External Script -->
+    <script src="win-script.js"></script>
+
     <script>
         (function() {
             const allScreens = document.querySelectorAll('.screen');
@@ -362,11 +379,15 @@
                 pendingTimeouts = [], activeIntervals = [], totalTimeSpent = 0, level1Jumps = 0, flyMode = false,
                 cheeseCollected = 0, isFrozen = false, shopSkipActive = false, gameCompleted = false,
                 level3TargetWord = '', obbyInterval = null, tutorialRunning = false;
+            let leftInterval = null, rightInterval = null; // mobile obby intervals
             const TOTAL_RETRIES = 10, TOTAL_CHEESE = 5;
 
             function showScreen(id) {
                 clearAllPending();
                 if (obbyInterval) { clearInterval(obbyInterval); obbyInterval = null; }
+                // Stop mobile obby controls
+                if (leftInterval) { clearInterval(leftInterval); leftInterval = null; }
+                if (rightInterval) { clearInterval(rightInterval); rightInterval = null; }
                 allScreens.forEach(s => s.classList.remove('active'));
                 const target = document.getElementById(id);
                 if (target) {
@@ -374,7 +395,6 @@
                     currentScreenId = id;
                     if (adminCurrentScreen) adminCurrentScreen.textContent = 'Screen: ' + (target.getAttribute('data-screen-name') || id);
                     updateAdminControls();
-                    // Update win screen time display
                     if (id === 'screen-win') {
                         const winTimeDisplay = document.getElementById('win-time-display');
                         if (winTimeDisplay) {
@@ -445,9 +465,12 @@
                 }
             }
 
+            // Skip button
             btnSkip.addEventListener('click', () => {
                 clearAllPending();
                 if (obbyInterval) { clearInterval(obbyInterval); obbyInterval = null; }
+                if (leftInterval) { clearInterval(leftInterval); leftInterval = null; }
+                if (rightInterval) { clearInterval(rightInterval); rightInterval = null; }
                 tutorialRunning = false;
                 const durations = {
                     'screen-initial-loading': 10, 'screen-signup-loading': 15, 'screen-continue-loading': 1,
@@ -458,14 +481,30 @@
                 };
                 if (durations[currentScreenId]) totalTimeSpent += durations[currentScreenId];
                 const skipMap = {
-                    'screen-initial-loading': 'screen-signup', 'screen-signup-loading': 'screen-continue',
-                    'screen-continue-loading': 'screen-tutorial-loading', 'screen-tutorial-loading': 'screen-tutorial-part1',
-                    'screen-tutorial-loading2': 'screen-tutorial-part3', 'screen-start-loading': 'screen-too-big',
-                    'screen-delete-animation': 'screen-deleting', 'screen-deleting': 'screen-final-loading',
-                    'screen-final-loading': 'screen-code-load',
+                    'screen-initial-loading': 'screen-signup',
+                    'screen-signup-loading': 'screen-continue',
+                    'screen-continue-loading': 'screen-tutorial-loading',
+                    'screen-tutorial-loading': 'screen-tutorial-part1',
+                    'screen-tutorial-loading2': 'screen-tutorial-part3',
+                    'screen-start-loading': 'screen-too-big',
+                    'screen-delete-animation': 'screen-deleting',
+                    'screen-deleting': 'screen-final-loading',
+                    // FIX: Final loading skip loads code.html
+                    'screen-final-loading': () => {
+                        totalTimeSpent += 3;
+                        const ifr = document.getElementById('code-iframe');
+                        if (ifr) ifr.src = 'code.html';
+                        showScreen('screen-code-load');
+                        return null;
+                    },
                     'screen-retry-loading': () => retryCount >= TOTAL_RETRIES ? 'screen-game' : 'screen-loading-failed',
                     'screen-loading-failed': () => { retryCount++; return retryCount >= TOTAL_RETRIES ? 'screen-game' : 'screen-retry-loading'; },
-                    'screen-code-load': () => { totalTimeSpent += 10; showScreen('screen-cheese-game'); setupCheeseGame(); return null; },
+                    'screen-code-load': () => {
+                        totalTimeSpent += 10;
+                        showScreen('screen-cheese-game');
+                        setupCheeseGame();
+                        return null;
+                    },
                     'screen-cheese-game': () => { skipCheeseGame(); return null; },
                     'screen-level1-loading': 'screen-level1-game',
                     'screen-level1-game': () => { completeLevel1(); return null; },
@@ -473,9 +512,12 @@
                     'screen-level2-game': () => { completeLevel2(); return null; },
                     'screen-level3-loading': 'screen-level3-game',
                     'screen-level3-game': () => { completeLevel3(); return null; },
-                    'screen-loading-15': 'screen-loading-16', 'screen-loading-16': 'screen-shop',
-                    'screen-loading-17': 'screen-shop', 'screen-tutorial-part1': 'screen-tutorial-part2',
-                    'screen-tutorial-part2': 'screen-tutorial-loading2', 'screen-tutorial-part3': 'screen-loading-failed',
+                    'screen-loading-15': 'screen-loading-16',
+                    'screen-loading-16': 'screen-shop',
+                    'screen-loading-17': 'screen-shop',
+                    'screen-tutorial-part1': 'screen-tutorial-part2',
+                    'screen-tutorial-part2': 'screen-tutorial-loading2',
+                    'screen-tutorial-part3': 'screen-loading-failed',
                 };
                 let next = skipMap[currentScreenId];
                 if (typeof next === 'function') next = next();
@@ -499,6 +541,7 @@
                 runLoadingScreen('screen-level1-loading', 120, 'screen-level1-game', 'level1-progress-fill', setupLevel1Game);
             }
 
+            // Draggable admin panel
             let isDragging = false, dragOffX = 0, dragOffY = 0;
             const dragHandle = document.getElementById('admin-drag-handle');
             dragHandle.addEventListener('mousedown', e => {
@@ -526,6 +569,7 @@
             });
             document.addEventListener('touchend', () => { isDragging = false; adminPanel.classList.remove('dragging'); });
 
+            // Initial loading
             const timeEstEl = document.getElementById('time-estimate');
             const schedule = [
                 { at: 0, text: 'Estimated time remaining: 20 min' },{at:3000,text:'21 min'},{at:4000,text:'14 min'},
@@ -535,6 +579,7 @@
             schedule.forEach(s => addTimeout(() => { if (timeEstEl) { timeEstEl.textContent = s.text; if (s.done) timeEstEl.classList.add('done'); } }, s.at));
             addTimeout(() => { totalTimeSpent += 10; showScreen('screen-signup'); }, 10000);
 
+            // Signup
             document.getElementById('btn-signup').addEventListener('click', () => {
                 playerName = document.getElementById('name-input').value.trim() || 'Player';
                 if (playerName.toLowerCase() === 'spo') { speedMode = true; adminPanel.classList.add('visible'); }
@@ -543,10 +588,12 @@
                 runLoadingScreen('screen-signup-loading', 15, 'screen-continue');
             });
 
+            // Continue
             document.getElementById('btn-continue').addEventListener('click', () => {
                 runLoadingScreen('screen-continue-loading', 1, 'screen-tutorial-loading', null, startTutorialLoading);
             });
 
+            // Tutorial
             function startTutorialLoading() {
                 if (tutorialRunning) return;
                 tutorialRunning = true;
@@ -566,16 +613,13 @@
                     }
                 }, 200);
             }
-
             function startTutorialSequence() {
                 if (!tutorialRunning) tutorialRunning = true;
                 addTimeout(() => { showScreen('screen-tutorial-part2'); startTutorialPart2(); }, 3000);
             }
-
             function startTutorialPart2() {
                 addTimeout(() => { showScreen('screen-tutorial-loading2'); startTutorialLoading2(); }, 3000);
             }
-
             function startTutorialLoading2() {
                 let e2 = 0;
                 const intId2 = addInterval(() => {
@@ -589,11 +633,11 @@
                     }
                 }, 200);
             }
-
             function startTutorialPart3() {
                 addTimeout(() => { tutorialRunning = false; showScreen('screen-loading-failed'); retryCount = 0; }, 10000);
             }
 
+            // Retry
             document.getElementById('btn-retry').addEventListener('click', () => {
                 retryCount++;
                 document.getElementById('retry-attempt-display').textContent = retryCount;
@@ -606,6 +650,7 @@
                 }, dur * 1000);
             });
 
+            // Game screen
             document.getElementById('btn-shop').addEventListener('click', e => {
                 e.preventDefault();
                 const hint = document.getElementById('game-hint');
@@ -616,6 +661,7 @@
                 runLoadingScreen('screen-start-loading', 15, 'screen-too-big', 'start-progress-fill');
             });
 
+            // Delete
             document.getElementById('btn-delete').addEventListener('click', () => {
                 runLoadingScreen('screen-delete-animation', 50, 'screen-deleting', null, () => {
                     const fillDel = document.getElementById('delete-progress-fill');
@@ -641,12 +687,14 @@
                 });
             });
 
+            // Code continue button
             document.getElementById('btn-code-continue').addEventListener('click', function() {
-                this.innerHTML = '<span class="spinner inline" style="width:20px;height:20px;"></span>';
+                this.innerHTML = '<span class="spinner inline"></span>';
                 this.disabled = true;
                 addTimeout(() => { totalTimeSpent += 10; showScreen('screen-cheese-game'); setupCheeseGame(); }, 10000);
             });
 
+            // Cheese collection
             function setupCheeseGame() {
                 cheeseCollected = 0; isFrozen = false;
                 document.getElementById('cheese-collected-count').textContent = '0';
@@ -669,7 +717,6 @@
                     area.appendChild(cheese);
                 }
             }
-
             function collectCheeseItem(el) {
                 if (isFrozen || el.classList.contains('collected')) return;
                 el.classList.add('collected'); cheeseCollected++;
@@ -683,6 +730,7 @@
                 }, 5000);
             }
 
+            // Level 1 Obby
             function setupLevel1Game() {
                 level1Jumps = 0; flyMode = false;
                 document.getElementById('jumps-count').textContent = '0';
@@ -707,6 +755,56 @@
                 document.addEventListener('keydown', handleObbyKeys);
                 if (obbyInterval) clearInterval(obbyInterval);
                 obbyInterval = setInterval(checkObbyWin, 100);
+                addMobileObbyControls();
+            }
+
+            // Mobile obby controls
+            function addMobileObbyControls() {
+                const btnLeft = document.getElementById('btn-left');
+                const btnRight = document.getElementById('btn-right');
+                const btnJump = document.getElementById('btn-jump');
+                if (!btnLeft || !btnRight || !btnJump) return;
+
+                function startMove(dir) {
+                    const player = document.getElementById('player-obby');
+                    const area = document.getElementById('obby-area');
+                    if (dir === 'left') {
+                        if (leftInterval) clearInterval(leftInterval);
+                        leftInterval = setInterval(() => {
+                            let left = parseInt(player.style.left) || 10;
+                            player.style.left = Math.max(0, left - 10) + 'px';
+                        }, 50);
+                    } else {
+                        if (rightInterval) clearInterval(rightInterval);
+                        rightInterval = setInterval(() => {
+                            let left = parseInt(player.style.left) || 10;
+                            player.style.left = Math.min(area.clientWidth - 30, left + 10) + 'px';
+                        }, 50);
+                    }
+                }
+                function stopMove(dir) {
+                    if (dir === 'left') { clearInterval(leftInterval); leftInterval = null; }
+                    if (dir === 'right') { clearInterval(rightInterval); rightInterval = null; }
+                }
+
+                btnLeft.addEventListener('touchstart', e => { e.preventDefault(); startMove('left'); });
+                btnLeft.addEventListener('touchend', () => stopMove('left'));
+                btnLeft.addEventListener('mousedown', () => startMove('left'));
+                btnLeft.addEventListener('mouseup', () => stopMove('left'));
+
+                btnRight.addEventListener('touchstart', e => { e.preventDefault(); startMove('right'); });
+                btnRight.addEventListener('touchend', () => stopMove('right'));
+                btnRight.addEventListener('mousedown', () => startMove('right'));
+                btnRight.addEventListener('mouseup', () => stopMove('right'));
+
+                btnJump.addEventListener('click', () => {
+                    const player = document.getElementById('player-obby');
+                    let bottom = parseInt(player.style.bottom) || 10;
+                    if (level1Jumps > 0 && !flyMode) { bottom = Math.min(250, bottom + 70); level1Jumps--; document.getElementById('jumps-count').textContent = level1Jumps; }
+                    if (flyMode) bottom = Math.min(280, bottom + 15);
+                    player.style.bottom = bottom + 'px';
+                });
+                btnJump.addEventListener('touchstart', e => { e.preventDefault(); btnJump.click(); });
             }
 
             function handleObbyKeys(e) {
@@ -720,20 +818,19 @@
                 if (flyMode) { if (e.key === 'w' || e.key === 'ArrowUp') bottom = Math.min(280, bottom + 15); if (e.key === 's' || e.key === 'ArrowDown') bottom = Math.max(0, bottom - 15); }
                 player.style.left = left + 'px'; player.style.bottom = bottom + 'px';
             }
-
             function checkObbyWin() {
                 if (currentScreenId !== 'screen-level1-game') return;
                 const player = document.getElementById('player-obby');
                 const left = parseInt(player.style.left) || 10, bottom = parseInt(player.style.bottom) || 10;
                 if (left > document.getElementById('obby-area').clientWidth - 55 && bottom > 30 && bottom < 100) completeLevel1();
             }
-
             function completeLevel1() {
                 if (obbyInterval) { clearInterval(obbyInterval); obbyInterval = null; }
                 document.removeEventListener('keydown', handleObbyKeys);
                 runLoadingScreen('screen-level2-loading', 60, 'screen-level2-game', 'level2-progress-fill', setupLevel2Game);
             }
 
+            // Level 2 Escape Room
             function setupLevel2Game() {
                 document.getElementById('escape-input').value = '';
                 document.getElementById('escape-feedback').style.display = 'none';
@@ -743,11 +840,14 @@
                 if (document.getElementById('escape-input').value.trim().toLowerCase() === 'voice') completeLevel2();
                 else document.getElementById('escape-feedback').style.display = 'block';
             });
-
+            document.getElementById('btn-hint-level2').addEventListener('click', () => {
+                alert('Hint: I speak without a mouth and hear without ears...\nAnswer: voice');
+            });
             function completeLevel2() {
                 runLoadingScreen('screen-level3-loading', 60, 'screen-level3-game', 'level3-progress-fill', setupLevel3Game);
             }
 
+            // Level 3 Long Word
             function setupLevel3Game() {
                 const words = ['pneumonoultramicroscopicsilicovolcanoconiosis', 'hippopotomonstrosesquippedaliophobia', 'supercalifragilisticexpialidocious', 'floccinaucinihilipilification', 'antidisestablishmentarianism'];
                 level3TargetWord = words[Math.floor(Math.random() * words.length)];
@@ -760,13 +860,13 @@
                 if (document.getElementById('word-input').value.trim() === level3TargetWord) completeLevel3();
                 else document.getElementById('word-feedback').style.display = 'block';
             });
-
             function completeLevel3() {
                 runLoadingScreen('screen-loading-15', 600, 'screen-loading-16', 'load15-fill', () => {
                     runLoadingScreen('screen-loading-16', 420, 'screen-shop', 'load16-fill', updateShopDisplay);
                 });
             }
 
+            // Shop
             function updateShopDisplay() {
                 const mins = Math.floor(totalTimeSpent / 60), secs = Math.floor(totalTimeSpent % 60);
                 document.getElementById('shop-time-display').textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
@@ -787,8 +887,5 @@
             console.log('🧀 Cheesy ready! Enter "spo" for admin panel.');
         })();
     </script>
-
-    <!-- Win Screen External Script -->
-    <script src="win-script.js"></script>
 </body>
-</html>
+                </html>
