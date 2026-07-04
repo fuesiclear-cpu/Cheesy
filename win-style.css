@@ -1,0 +1,191 @@
+/* ============================================
+   WIN SCREEN - Beautiful Victory Design
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
+
+/* Win screen container */
+.win-container {
+    width: 100%;
+    max-width: 650px;
+    padding: 30px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Floating confetti */
+.win-container::before {
+    content: '🎉';
+    position: absolute;
+    font-size: 2rem;
+    animation: floatDown 3s ease-in infinite;
+    opacity: 0.6;
+    top: -50px;
+    left: 10%;
+}
+.win-container::after {
+    content: '🧀';
+    position: absolute;
+    font-size: 2rem;
+    animation: floatDown 4s ease-in 1s infinite;
+    opacity: 0.6;
+    top: -50px;
+    right: 15%;
+}
+
+@keyframes floatDown {
+    0% { transform: translateY(0) rotate(0deg); opacity: 0.6; }
+    50% { opacity: 0.3; }
+    100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+}
+
+/* Trophy */
+.trophy-icon {
+    font-size: 6rem;
+    animation: bounce 0.6s ease infinite alternate;
+    filter: drop-shadow(0 0 30px rgba(255, 215, 0, 0.6));
+    margin-bottom: 10px;
+}
+
+@keyframes bounce {
+    0% { transform: translateY(0) scale(1); }
+    100% { transform: translateY(-15px) scale(1.05); }
+}
+
+/* Heading */
+.win-heading {
+    font-family: 'Fredoka One', cursive;
+    font-size: 3.5rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #ffd700, #ffaa00, #ffd700, #fff4cc);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: shimmer 2s ease-in-out infinite;
+    letter-spacing: 2px;
+    margin: 10px 0;
+}
+
+@keyframes shimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+/* Subtitle */
+.win-subtitle {
+    font-size: 1.3rem;
+    color: #cbd5e1;
+    font-weight: 500;
+    margin-bottom: 10px;
+}
+
+/* Stats card */
+.win-stats {
+    background: linear-gradient(135deg, #1e1b4b, #1a1a2e);
+    border: 2px solid #ffd700;
+    border-radius: 20px;
+    padding: 20px 30px;
+    margin: 20px 0;
+    box-shadow: 0 0 40px rgba(255, 215, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.win-stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #e2e8f0;
+    font-size: 1.1rem;
+}
+
+.win-stat-label {
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.win-stat-value {
+    color: #ffd700;
+    font-weight: 700;
+    font-size: 1.3rem;
+}
+
+/* Stars */
+.stars-row {
+    font-size: 2.5rem;
+    letter-spacing: 8px;
+    animation: twinkle 1s ease-in-out infinite alternate;
+}
+
+@keyframes twinkle {
+    0% { opacity: 0.7; transform: scale(1); }
+    100% { opacity: 1; transform: scale(1.05); }
+}
+
+/* Load GG Button */
+.btn-load-gg {
+    padding: 18px 50px;
+    font-size: 1.3rem;
+    font-weight: 800;
+    font-family: 'Fredoka One', cursive;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, #ffd700, #ffaa00);
+    color: #1a1a2e;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 30px rgba(255, 215, 0, 0.4);
+    text-transform: uppercase;
+    margin-top: 20px;
+}
+
+.btn-load-gg:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(255, 215, 0, 0.6);
+    background: linear-gradient(135deg, #fff4cc, #ffd700);
+}
+
+.btn-load-gg:active {
+    transform: translateY(0);
+}
+
+/* GG iframe */
+.gg-iframe-container {
+    width: 100%;
+    margin-top: 20px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(139, 92, 246, 0.4);
+    display: none;
+}
+
+.gg-iframe-container.show {
+    display: block;
+    animation: slideUp 0.5s ease;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.gg-iframe {
+    width: 100%;
+    height: 50vh;
+    border: 3px solid #8b5cf6;
+    border-radius: 16px;
+    background: #0f172a;
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+    .win-heading { font-size: 2.2rem; }
+    .win-stats { padding: 15px 20px; }
+    .btn-load-gg { padding: 14px 35px; font-size: 1.1rem; }
+    .trophy-icon { font-size: 4rem; }
+    .stars-row { font-size: 2rem; }
+}

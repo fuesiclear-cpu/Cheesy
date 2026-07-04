@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+body{
+margin:0;
+font-family:Segoe UI, Arial;
+user-select:none;
+-webkit-user-select:none;
+overflow:hidden;
+}
+
+#spin{
+width:28px;
+height:28px;
+border:4px solid #fff;
+border-top-color:transparent;
+border-radius:50%;
+animation:spin 1s linear infinite;
+}
+
+@keyframes spin{
+to{transform:rotate(360deg);}
+}
+
+.center{
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+flex-direction:column;
+}
+</style>
+</head>
+<body>
+
+<button id="btn">Start</button>
+
+<script>
+
+let holdTimer=null;
+let held=false;
+let interval=null;
+let startTime=0;
+let finished=false;
+
+document.addEventListener("contextmenu",e=>e.preventDefault());
+
+const btn=document.getElementById("btn");
+
+/* HOLD */
+btn.addEventListener("mousedown",startHold);
+btn.addEventListener("touchstart",startHold);
+
+/* RELEASE */
+btn.addEventListener("mouseup",endHold);
+btn.addEventListener("mouseleave",endHold);
+btn.addEventListener("touchend",endHold);
+
+/* CLICK */
+btn.addEventListener("click",()=>{
+if(!held) startNormal();
+});
+
+function startHold(e){
+e.preventDefault();
+held=false;
+
+holdTimer=setTimeout(()=>{
+held=true;
+startBlackRestart();
+},5000);
+}
+
+function endHold(){
+clearTimeout(holdTimer);
+}
+
+function startNormal(){
+startFake(3600); // 1 hour
+}
+
+function startBlackRestart(){
+document.body.innerHTML="<div style='background:black;width:100vw;height:100vh'></div>";
+
+setTimeout(()=>{
+startFake(30); // fast 30 sec restart
+},5000);
+}
+
+/* MAIN FAKE LOADING */
+function startFake(totalSeconds){
+
+finished=false;
+let frozen=false;
+let freezeStart=0;
+let realP=0;
+
+document.body.innerHTML=`
+<div class="center" style="background:#0078D7;color:white">
+<div style="font-size:60px">:(</div>
+<br>
+Your PC ran into a problem and needs to restart.
+<br><br>
+
+<div id="spin"></div>
+<br>
+
+Sending error information to Microsoft...
+<br><br>
+
+<span id="p">0%</span> complete
+</div>`;
+
+startTime=Date.now();
+
+interval=setInterval(()=>{
+
+if(finished) return;
+
+let sec=(Date.now()-startTime)/1000;
+let t=sec/totalSeconds;
+if(t>1)t=1;
+
+// REAL progress
+realP=100*(1-Math.pow(1-t,7));
+
+/* 🔥 FAKE FREEZE AT 50% */
+if(!frozen && realP>=50 && realP<55){
+frozen=true;
+freezeStart=Date.now();
+}
+
+if(frozen){
+let ft=(Date.now()-freezeStart)/1000;
+
+// freeze display for 5 seconds
+if(ft<5){
+document.getElementById("p").textContent="50.0%";
+return;
+}
+}
+
+/* after freeze → continue normally */
+frozen=false;
+
+let txt;
+
+if(realP<85) txt=Math.floor(realP)+"%";
+else if(realP<95) txt=realP.toFixed(1)+"%";
+else if(realP<99) txt=realP.toFixed(2)+"%";
+else txt=realP.toFixed(5)+"%";
+
+if(t>=1){
+txt="100.00000%";
+finished=true;
+clearInterval(interval);
+restartSequence();
+}
+
+document.getElementById("p").textContent=txt;
+
+},50);
+}
+
+/* RESTART FLOW */
+function restartSequence(){
+
+// BLACK
+document.body.innerHTML="<div style='background:black;width:100vw;height:100vh'></div>";
+
+setTimeout(()=>{
+
+// BLUE RESTARTING
+document.body.innerHTML=`
+<div class="center" style="background:#0078D7;color:white">
+<h1>Restarting...</h1>
+</div>`;
+
+setTimeout(()=>{
+
+// BLACK AGAIN
+document.body.innerHTML="<div style='background:black;width:100vw;height:100vh'></div>";
+
+setTimeout(()=>{
+
+// LOGIN SCREEN
+document.body.innerHTML=`
+<div class="center">
+<h2>User: gage</h2>
+<input id="pw" type="password" placeholder="Password">
+<button onclick="login()">Login</button>
+</div>`;
+
+},1500);
+
+},1500);
+
+},1500);
+}
+
+/* LOGIN */
+window.login=function(){
+let v=document.getElementById("pw").value;
+
+if(v==="1234"){
+document.body.innerHTML=`
+<div style="background:black;color:white;height:100vh;display:flex;justify-content:center;align-items:center;font-size:30px">
+Closed...
+</div>`;
+}
+};
+
+</script>
+
+</body>
+</html>

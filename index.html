@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cheesy - Game Launcher</title>
+    <!-- Win Screen External Stylesheet -->
+    <link rel="stylesheet" href="win-style.css">
+    <style>
+        :root {
+            --bg: #1a1a2e;
+            --surface: #16213e;
+            --accent: #f59e0b;
+            --danger: #dc2626;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --success: #22c55e;
+            --admin-bg: #0f0f1a;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-y: auto;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .container { width: 100%; max-width: 600px; padding: 20px; text-align: center; position: relative; }
+        .screen { display: none; flex-direction: column; align-items: center; gap: 20px; animation: fadeIn 0.3s ease; width: 100%; }
+        .screen.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+        .spinner { width: 48px; height: 48px; border: 4px solid #334155; border-top: 4px solid var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        .spinner.large { width: 72px; height: 72px; border-width: 6px; }
+        .spinner.small { width: 28px; height: 28px; border-width: 3px; }
+        .spinner.danger { border-top-color: var(--danger); }
+        .spinner.inline { width: 20px; height: 20px; border-width: 3px; display: inline-block; vertical-align: middle; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        h1 { font-size: 1.8rem; font-weight: 700; letter-spacing: -0.02em; }
+        h2 { font-size: 1.3rem; font-weight: 600; color: var(--muted); }
+        .estimate { font-size: 1.1rem; color: #fbbf24; font-weight: 600; animation: pulse 2s ease-in-out infinite; }
+        .estimate.done { color: var(--success); animation: none; }
+        input[type="text"] { width: 100%; max-width: 300px; padding: 14px 18px; border: 2px solid #334155; border-radius: 12px; background: #1e293b; color: #fff; font-size: 1rem; outline: none; transition: border-color 0.2s; text-align: center; }
+        input[type="text"]:focus { border-color: var(--accent); }
+        button { padding: 14px 32px; border: none; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s; letter-spacing: 0.01em; min-width: 140px; }
+        button:active { transform: scale(0.96); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .btn-primary { background: var(--accent); color: #1a1a2e; }
+        .btn-primary:hover:not(:disabled) { background: #fbbf24; box-shadow: 0 0 30px rgba(245,158,11,0.4); }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn-danger:hover:not(:disabled) { background: #ef4444; box-shadow: 0 0 30px rgba(220,38,38,0.5); }
+        .btn-outline { background: transparent; border: 2px solid #475569; color: #cbd5e1; }
+        .btn-outline:hover:not(:disabled) { border-color: #94a3b8; color: #fff; }
+        .btn-skip { background: #22c55e; color: #000; font-size: 0.75rem; padding: 6px 12px; min-width: auto; font-weight: 700; width: 100%; }
+        .btn-skip:hover:not(:disabled) { background: #4ade80; box-shadow: 0 0 15px rgba(34,197,94,0.5); }
+        .progress-bar { width: 100%; max-width: 350px; height: 8px; background: #334155; border-radius: 10px; overflow: hidden; }
+        .progress-bar .fill { height: 100%; background: var(--accent); border-radius: 10px; transition: width 0.3s ease; }
+        .progress-bar.danger .fill { background: var(--danger); }
+        .tutorial-text { font-size: 1.4rem; font-weight: 500; color: #fff; letter-spacing: 0.02em; line-height: 1.6; max-width: 400px; }
+        .game-logo { font-size: 3rem; font-weight: 900; letter-spacing: -0.03em; background: linear-gradient(135deg,#f59e0b,#fbbf24,#f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .button-row { display: flex; gap: 16px; flex-wrap: wrap; justify-content: center; }
+        .badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; background: #334155; color: #94a3b8; }
+        .badge.new { background: #1e3a5f; color: #60a5fa; }
+        .badge.admin { background: #7c3aed; color: #fff; }
+        iframe { width: 100%; height: 50vh; border: 2px solid #334155; border-radius: 12px; background: #0f172a; }
+        .delete-percent { font-size: 2.5rem; font-weight: 900; color: var(--danger); letter-spacing: -0.02em; }
+        .admin-panel { position: fixed; bottom: 20px; right: 20px; background: var(--admin-bg); border: 2px solid #7c3aed; border-radius: 16px; padding: 16px; z-index: 1000; min-width: 220px; display: none; flex-direction: column; gap: 10px; box-shadow: 0 0 30px rgba(124,58,237,0.3); cursor: grab; }
+        .admin-panel.visible { display: flex; }
+        .admin-panel.dragging { box-shadow: 0 0 40px rgba(124,58,237,0.6); opacity: 0.9; }
+        .admin-panel .drag-handle { cursor: grab; display: flex; align-items: center; gap: 8px; padding: 4px; border-radius: 8px; background: rgba(124,58,237,0.2); }
+        .admin-panel h3 { color: #a78bfa; font-size: 0.9rem; margin: 0; display: flex; align-items: center; gap: 8px; pointer-events: none; }
+        .admin-panel .current-screen-name { color: #fbbf24; font-size: 0.75rem; font-weight: 600; }
+        .admin-panel .skip-info { font-size: 0.7rem; color: #94a3b8; text-align: left; }
+        .cheese-game-area { position: relative; width: 100%; max-width: 500px; height: 400px; background: #0f172a; border: 2px solid #334155; border-radius: 16px; overflow: hidden; }
+        .cheese { position: absolute; font-size: 2.5rem; cursor: pointer; z-index: 2; animation: cheeseFloat 2s ease-in-out infinite; }
+        .cheese:hover { transform: scale(1.3); }
+        .cheese.collected { opacity: 0; pointer-events: none; }
+        @keyframes cheeseFloat { 0%,100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
+        .cheese-counter { font-size: 1.2rem; color: #fbbf24; font-weight: 600; }
+        .freeze-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 10; border-radius: 16px; }
+        .freeze-overlay.hidden { display: none; }
+        .obby-area { position: relative; width: 100%; max-width: 500px; height: 350px; background: #1e1b4b; border: 2px solid #7c3aed; border-radius: 16px; overflow: hidden; }
+        .player-obby { position: absolute; width: 30px; height: 30px; background: #fbbf24; border-radius: 50%; z-index: 3; transition: left 0.05s,bottom 0.05s; }
+        .cheese-token { position: absolute; font-size: 1.5rem; cursor: pointer; z-index: 2; }
+        .obby-platform { position: absolute; background: #4c1d95; border-radius: 4px; }
+        .obby-finish { position: absolute; width: 40px; height: 40px; background: #22c55e; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: #000; z-index: 2; }
+        .escape-room-clue { background: #1e293b; padding: 12px; border-radius: 8px; text-align: left; margin: 8px 0; color: #cbd5e1; }
+        .long-word-display { font-size: 1.2rem; color: #fbbf24; word-break: break-all; background: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #334155; max-width: 100%; }
+        @media (max-width:600px) { .cheese-game-area,.obby-area { height: 280px; } .cheese { font-size: 2rem; } .admin-panel { bottom: 10px; right: 10px; min-width: 180px; padding: 12px; } button { padding: 12px 24px; font-size: 0.9rem; } }
+    </style>
+</head>
+<body>
+    <div class="container" id="app">
+        <!-- Initial Loading -->
+        <div class="screen active" id="screen-initial-loading" data-screen-name="Initial Loading (10s)">
+            <div class="spinner large"></div>
+            <h2>Loading Cheesy...</h2>
+            <p class="estimate" id="time-estimate">Estimated time remaining: 20 min</p>
+            <p style="color:#64748b;font-size:0.85rem;">Please wait while we prepare your experience</p>
+        </div>
+        <!-- Sign Up -->
+        <div class="screen" id="screen-signup" data-screen-name="Sign Up">
+            <div class="game-logo">🧀 Cheesy</div>
+            <h2>Create Your Account</h2>
+            <p style="color:#94a3b8;">Enter your name to get started</p>
+            <input type="text" id="name-input" placeholder="Your name..." maxlength="30">
+            <button class="btn-primary" id="btn-signup">Sign Up</button>
+        </div>
+        <!-- Signup Loading -->
+        <div class="screen" id="screen-signup-loading" data-screen-name="Signup Loading (15s)">
+            <div class="spinner large"></div>
+            <h2>Creating account...</h2>
+            <p style="color:#64748b;">Setting up your profile</p>
+        </div>
+        <!-- Continue Button -->
+        <div class="screen" id="screen-continue" data-screen-name="Continue">
+            <div class="game-logo">🧀</div>
+            <h2>Account Ready!</h2>
+            <p style="color:#94a3b8;" id="welcome-name-display">Welcome!</p>
+            <button class="btn-primary" id="btn-continue">Continue</button>
+        </div>
+        <!-- Continue Loading -->
+        <div class="screen" id="screen-continue-loading" data-screen-name="Continue Loading (1s)">
+            <div class="spinner"></div>
+            <p style="color:#94a3b8;">Continuing...</p>
+        </div>
+        <!-- Tutorial Loading -->
+        <div class="screen" id="screen-tutorial-loading" data-screen-name="Tutorial Loading (35s)">
+            <div class="spinner large"></div>
+            <h2>Loading Tutorial...</h2>
+            <p style="color:#64748b;">Fetching video data</p>
+            <div class="progress-bar"><div class="fill" id="tutorial-progress-fill" style="width:0%;"></div></div>
+        </div>
+        <!-- Tutorial Part 1 -->
+        <div class="screen" id="screen-tutorial-part1" data-screen-name="Tutorial Part 1">
+            <div style="background:#000;width:100%;max-width:400px;aspect-ratio:16/9;border-radius:12px;display:flex;align-items:center;justify-content:center;border:2px solid #334155;">
+                <p class="tutorial-text">🎬 Hello welcome to the tutorial!</p>
+            </div>
+            <p style="color:#64748b;font-size:0.8rem;">🔇 No audio available</p>
+        </div>
+        <!-- Tutorial Part 2 -->
+        <div class="screen" id="screen-tutorial-part2" data-screen-name="Tutorial Part 2">
+            <div style="background:#000;width:100%;max-width:400px;aspect-ratio:16/9;border-radius:12px;display:flex;align-items:center;justify-content:center;border:2px solid #334155;">
+                <p class="tutorial-text">This is a cool game called: <span style="color:#f59e0b;font-weight:700;">Cheesy</span></p>
+            </div>
+            <p style="color:#64748b;font-size:0.8rem;">🔇 No audio available</p>
+        </div>
+        <!-- Tutorial Loading 2 -->
+        <div class="screen" id="screen-tutorial-loading2" data-screen-name="Tutorial Loading 2 (8s)">
+            <div class="spinner"></div>
+            <p style="color:#94a3b8;">Buffering...</p>
+        </div>
+        <!-- Tutorial Part 3 -->
+        <div class="screen" id="screen-tutorial-part3" data-screen-name="Tutorial Part 3">
+            <div style="background:#000;width:100%;max-width:400px;aspect-ratio:16/9;border-radius:12px;display:flex;align-items:center;justify-content:center;border:2px solid #334155;">
+                <p class="tutorial-text">So in <span style="color:#f59e0b;font-weight:700;">Cheesy</span> you put your name first!</p>
+            </div>
+            <p style="color:#64748b;font-size:0.8rem;">🔇 No audio available</p>
+        </div>
+        <!-- Loading Failed -->
+        <div class="screen" id="screen-loading-failed" data-screen-name="Loading Failed">
+            <div style="font-size:3rem;">⚠️</div>
+            <h2 style="color:#ef4444;">Loading Failed</h2>
+            <p style="color:#94a3b8;">Something went wrong while loading</p>
+            <button class="btn-outline" id="btn-retry">🔄 Retry</button>
+        </div>
+        <!-- Retry Loading -->
+        <div class="screen" id="screen-retry-loading" data-screen-name="Retry Loading">
+            <div class="spinner"></div>
+            <p style="color:#94a3b8;">Retrying... Attempt <span id="retry-attempt-display">1</span></p>
+        </div>
+        <!-- Game Screen -->
+        <div class="screen" id="screen-game" data-screen-name="Game Screen">
+            <div class="game-logo">🧀 Cheesy</div>
+            <p style="color:#94a3b8;">Welcome, <span id="game-player-name"></span>!</p>
+            <div class="button-row">
+                <button class="btn-outline" id="btn-shop" disabled title="Locked for new players">🛒 Shop <span class="badge new">Locked</span></button>
+                <button class="btn-primary" id="btn-start">▶ Start Game</button>
+            </div>
+            <p style="color:#64748b;font-size:0.8rem;" id="game-hint">Click <strong>Start</strong> to begin your adventure!</p>
+        </div>
+        <!-- Start Loading -->
+        <div class="screen" id="screen-start-loading" data-screen-name="Start Loading (15s)">
+            <div class="spinner large"></div>
+            <h2>Starting Game...</h2>
+            <p style="color:#64748b;">Allocating resources</p>
+            <div class="progress-bar"><div class="fill" id="start-progress-fill" style="width:0%;"></div></div>
+        </div>
+        <!-- Too Big -->
+        <div class="screen" id="screen-too-big" data-screen-name="Too Big Error">
+            <div style="font-size:4rem;">📦</div>
+            <h2 style="color:#ef4444;">Too Big for Your Device</h2>
+            <p style="color:#94a3b8;">This game requires more storage than available</p>
+            <button class="btn-danger" id="btn-delete">🗑️ Delete Game Files</button>
+        </div>
+        <!-- Delete Animation -->
+        <div class="screen" id="screen-delete-animation" data-screen-name="Delete Animation (50s)">
+            <div class="spinner large danger"></div>
+            <h2 style="color:#ef4444;">Preparing Deletion...</h2>
+        </div>
+        <!-- Deleting -->
+        <div class="screen" id="screen-deleting" data-screen-name="Deleting (60s)">
+            <div style="font-size:3rem;">🗑️</div>
+            <h2 style="color:#ef4444;">Deleting Game Files...</h2>
+            <p class="delete-percent" id="delete-percent">0%</p>
+            <div class="progress-bar danger"><div class="fill" id="delete-progress-fill" style="width:0%;background:#dc2626;"></div></div>
+        </div>
+        <!-- Final Loading -->
+        <div class="screen" id="screen-final-loading" data-screen-name="Final Loading (3s)">
+            <h2 style="color:#94a3b8;">Loading...</h2>
+            <p style="color:#64748b;">Please wait</p>
+        </div>
+        <!-- Code Load with Continue Button -->
+        <div class="screen" id="screen-code-load" data-screen-name="Code Load">
+            <h2 style="color:#22c555;">✅ Ready</h2>
+            <p style="color:#94a3b8;">Loading your content...</p>
+            <iframe id="code-iframe" src="code.html" style="width:100%;height:45vh;border:2px solid #334155;border-radius:12px;background:#0f172a;"></iframe>
+            <p style="color:#64748b;font-size:0.7rem;">If blank, ensure <code>code.html</code> exists in the same folder</p>
+            <button class="btn-primary" id="btn-code-continue">Continue</button>
+        </div>
+        <!-- Cheese Collection -->
+        <div class="screen" id="screen-cheese-game" data-screen-name="Cheese Collection">
+            <h2 style="color:#fbbf24;">🧀 Collect 5 Cheese! 🧀</h2>
+            <p class="cheese-counter">Collected: <span id="cheese-collected-count">0</span>/5</p>
+            <div class="cheese-game-area" id="cheese-game-area">
+                <div class="freeze-overlay hidden" id="freeze-overlay">
+                    <div class="spinner large"></div>
+                    <p style="color:#fff;">Processing...</p>
+                </div>
+            </div>
+        </div>
+        <!-- Level 1 Loading -->
+        <div class="screen" id="screen-level1-loading" data-screen-name="Level 1 Loading (120s)">
+            <h1 style="color:#fbbf24;">🧀 Level 1</h1>
+            <h2>The Cheese Castle Obby</h2>
+            <div class="spinner large"></div>
+            <div class="progress-bar"><div class="fill" id="level1-progress-fill" style="width:0%;"></div></div>
+        </div>
+        <!-- Level 1 Game -->
+        <div class="screen" id="screen-level1-game" data-screen-name="Level 1: Obby">
+            <h2>🏰 Cheese Castle Obby</h2>
+            <p>Jumps: <span id="jumps-count">0</span> | Collect 🧀 for jumps!</p>
+            <div class="obby-area" id="obby-area">
+                <div class="player-obby" id="player-obby" style="bottom:10px;left:10px;"></div>
+            </div>
+            <p style="color:#94a3b8;font-size:0.8rem;">← → or AD | SPACE to jump (costs 1 🧀)</p>
+        </div>
+        <!-- Level 2 Loading -->
+        <div class="screen" id="screen-level2-loading" data-screen-name="Level 2 Loading (60s)">
+            <h1>🧩 Level 2</h1>
+            <h2>The Escape Room</h2>
+            <div class="spinner large"></div>
+            <div class="progress-bar"><div class="fill" id="level2-progress-fill" style="width:0%;"></div></div>
+        </div>
+        <!-- Level 2 Game -->
+        <div class="screen" id="screen-level2-game" data-screen-name="Level 2: Escape Room">
+            <h2>🔐 Escape Room</h2>
+            <div class="escape-room-clue">Clue 1: I speak without a mouth and hear without ears. I have no body, but I come alive with the wind.</div>
+            <div class="escape-room-clue">Clue 2: The more you take, the more you leave behind.</div>
+            <p style="color:#fbbf24;">Enter the 5-letter code (lowercase):</p>
+            <input type="text" id="escape-input" maxlength="5" placeholder="code">
+            <button class="btn-primary" id="btn-escape-submit">Submit</button>
+            <p id="escape-feedback" style="color:#ef4444;display:none;">Wrong code!</p>
+        </div>
+        <!-- Level 3 Loading -->
+        <div class="screen" id="screen-level3-loading" data-screen-name="Level 3 Loading (60s)">
+            <h1>📝 Level 3</h1>
+            <h2>The Final Challenge</h2>
+            <div class="spinner large"></div>
+            <div class="progress-bar"><div class="fill" id="level3-progress-fill" style="width:0%;"></div></div>
+        </div>
+        <!-- Level 3 Game -->
+        <div class="screen" id="screen-level3-game" data-screen-name="Level 3: Long Word">
+            <h2>📝 Type the Long Word</h2>
+            <p class="long-word-display" id="target-word">Loading...</p>
+            <input type="text" id="word-input" placeholder="Type exactly">
+            <button class="btn-primary" id="btn-word-submit">Submit</button>
+            <p id="word-feedback" style="color:#ef4444;display:none;">Not quite right!</p>
+        </div>
+        <!-- Loading 15 (10 min) -->
+        <div class="screen" id="screen-loading-15" data-screen-name="Loading (10 min)">
+            <div class="spinner large"></div>
+            <h2>Preparing Shop...</h2>
+            <div class="progress-bar"><div class="fill" id="load15-fill" style="width:0%;"></div></div>
+        </div>
+        <!-- Loading 16 (7 min) -->
+        <div class="screen" id="screen-loading-16" data-screen-name="Loading (7 min)">
+            <div class="spinner large"></div>
+            <h2>Finalizing Setup...</h2>
+            <div class="progress-bar"><div class="fill" id="load16-fill" style="width:0%;"></div></div>
+        </div>
+        <!-- Shop -->
+        <div class="screen" id="screen-shop" data-screen-name="Cheesy Shop">
+            <h1>🛒 Cheesy Shop</h1>
+            <p style="color:#fbbf24;">Wasted time: <span id="shop-time-display">0:00</span></p>
+            <button class="btn-primary" id="btn-buy-skip">Buy Skip (10 min)</button>
+            <button class="btn-primary" id="btn-buy-win">Buy Win (25 min)</button>
+            <button class="btn-outline" id="btn-close-shop">Close Shop</button>
+            <p style="color:#64748b;font-size:0.7rem;">Skip: 7-min loading doesn't count. Win: ends game.</p>
+        </div>
+        <!-- Loading 17 (10s) -->
+        <div class="screen" id="screen-loading-17" data-screen-name="Loading (10s)">
+            <div class="spinner"></div>
+            <p>Opening/Closing Shop...</p>
+        </div>
+        <!-- Victory / Win Screen (uses external CSS & JS) -->
+        <div class="screen" id="screen-win" data-screen-name="Victory!">
+            <div class="win-container">
+                <div class="stars-row">⭐ 🌟 ⭐ 🌟 ⭐</div>
+                <div class="trophy-icon">🏆</div>
+                <h1 class="win-heading">YOU WON!</h1>
+                <p class="win-subtitle">I wasted your time but you conquered it all</p>
+                <div class="win-stats">
+                    <div class="win-stat-row">
+                        <span class="win-stat-label">🕐 Time Wasted:</span>
+                        <span class="win-stat-value" id="win-time-display">Loading...</span>
+                    </div>
+                    <div class="win-stat-row">
+                        <span class="win-stat-label">🧀 Levels Completed:</span>
+                        <span class="win-stat-value">3 / 3</span>
+                    </div>
+                    <div class="win-stat-row">
+                        <span class="win-stat-label">🏅 Achievement:</span>
+                        <span class="win-stat-value">Time Lord</span>
+                    </div>
+                </div>
+                <button class="btn-load-gg" id="btn-load-gg">🎮 Load GG</button>
+                <div class="gg-iframe-container" id="gg-iframe-container">
+                    <iframe class="gg-iframe" id="gg-iframe" src="" title="GG Content"></iframe>
+                </div>
+                <p style="color:#64748b;margin-top:20px;font-size:0.9rem;">🧀 Cheesy - Thanks for playing!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin Panel -->
+    <div class="admin-panel" id="admin-panel">
+        <div class="drag-handle" id="admin-drag-handle">
+            <span style="font-size:1.2rem;">⠿</span>
+            <h3>🛡️ <span class="badge admin">ADMIN</span></h3>
+        </div>
+        <p class="current-screen-name" id="admin-current-screen">Screen: -</p>
+        <button class="btn-skip" id="btn-skip">⚡ Skip Current</button>
+        <div id="admin-level-controls"></div>
+        <p class="skip-info">Drag to move | Skip = full time added</p>
+    </div>
+
+    <!-- Main Game Script -->
+    <script>
+        (function() {
+            const allScreens = document.querySelectorAll('.screen');
+            const adminPanel = document.getElementById('admin-panel');
+            const adminCurrentScreen = document.getElementById('admin-current-screen');
+            const adminLevelControls = document.getElementById('admin-level-controls');
+            const btnSkip = document.getElementById('btn-skip');
+            let playerName = '', retryCount = 0, speedMode = false, currentScreenId = 'screen-initial-loading',
+                pendingTimeouts = [], activeIntervals = [], totalTimeSpent = 0, level1Jumps = 0, flyMode = false,
+                cheeseCollected = 0, isFrozen = false, shopSkipActive = false, gameCompleted = false,
+                level3TargetWord = '', obbyInterval = null, tutorialRunning = false;
+            const TOTAL_RETRIES = 10, TOTAL_CHEESE = 5;
+
+            function showScreen(id) {
+                clearAllPending();
+                if (obbyInterval) { clearInterval(obbyInterval); obbyInterval = null; }
+                allScreens.forEach(s => s.classList.remove('active'));
+                const target = document.getElementById(id);
+                if (target) {
+                    target.classList.add('active');
+                    currentScreenId = id;
+                    if (adminCurrentScreen) adminCurrentScreen.textContent = 'Screen: ' + (target.getAttribute('data-screen-name') || id);
+                    updateAdminControls();
+                    // Update win screen time display
+                    if (id === 'screen-win') {
+                        const winTimeDisplay = document.getElementById('win-time-display');
+                        if (winTimeDisplay) {
+                            const mins = Math.floor(totalTimeSpent / 60);
+                            const secs = Math.floor(totalTimeSpent % 60);
+                            winTimeDisplay.textContent = mins + ' min ' + secs + ' sec';
+                        }
+                    }
+                }
+            }
+
+            function clearAllPending() {
+                pendingTimeouts.forEach(t => clearTimeout(t));
+                pendingTimeouts = [];
+                activeIntervals.forEach(i => clearInterval(i));
+                activeIntervals = [];
+            }
+
+            function addTimeout(cb, delay) {
+                const id = setTimeout(() => { pendingTimeouts = pendingTimeouts.filter(t => t !== id); cb(); }, delay);
+                pendingTimeouts.push(id);
+                return id;
+            }
+
+            function addInterval(cb, interval) {
+                const id = setInterval(cb, interval);
+                activeIntervals.push(id);
+                return id;
+            }
+
+            function runLoadingScreen(screenId, durationSec, nextScreenId, progressFillId, callback) {
+                showScreen(screenId);
+                const fill = progressFillId ? document.getElementById(progressFillId) : null;
+                let elapsed = 0;
+                const intervalMs = 200;
+                const intervalId = addInterval(() => {
+                    elapsed += intervalMs / 1000;
+                    const pct = Math.min(100, (elapsed / durationSec) * 100);
+                    if (fill) fill.style.width = pct + '%';
+                    if (elapsed >= durationSec) {
+                        clearInterval(intervalId);
+                        activeIntervals = activeIntervals.filter(i => i !== intervalId);
+                        if (fill) fill.style.width = '100%';
+                        totalTimeSpent += durationSec;
+                        showScreen(nextScreenId);
+                        if (callback) callback();
+                    }
+                }, intervalMs);
+            }
+
+            function updateAdminControls() {
+                if (!speedMode) return;
+                let html = '';
+                if (currentScreenId === 'screen-level1-game') {
+                    html += '<button id="admin-add-jumps" style="background:#22c55e;color:#000;padding:6px 12px;border:none;border-radius:8px;cursor:pointer;width:100%;margin-top:4px;">+5 Jumps</button>';
+                    html += `<button id="admin-toggle-fly" style="background:#f59e0b;color:#000;padding:6px 12px;border:none;border-radius:8px;cursor:pointer;width:100%;margin-top:4px;">${flyMode?'Disable Fly':'Enable Fly'}</button>`;
+                } else if (currentScreenId === 'screen-level2-game') {
+                    html += '<p style="color:#a78bfa;font-size:0.75rem;">Hint: Both clues = same word</p>';
+                    html += '<p style="color:#22c55e;font-size:0.75rem;">Solution: voice</p>';
+                } else if (currentScreenId === 'screen-level3-game') {
+                    html += '<p style="color:#a78bfa;font-size:0.7rem;">Words:</p>';
+                    html += '<p style="color:#94a3b8;font-size:0.6rem;">pneumonoultramicroscopicsilicovolcanoconiosis<br>hippopotomonstrosesquippedaliophobia<br>supercalifragilisticexpialidocious<br>floccinaucinihilipilification<br>antidisestablishmentarianism</p>';
+                }
+                adminLevelControls.innerHTML = html;
+                if (currentScreenId === 'screen-level1-game') {
+                    document.getElementById('admin-add-jumps')?.addEventListener('click', () => { level1Jumps += 5; document.getElementById('jumps-count').textContent = level1Jumps; });
+                    document.getElementById('admin-toggle-fly')?.addEventListener('click', () => { flyMode = !flyMode; updateAdminControls(); });
+                }
+            }
+
+            btnSkip.addEventListener('click', () => {
+                clearAllPending();
+                if (obbyInterval) { clearInterval(obbyInterval); obbyInterval = null; }
+                tutorialRunning = false;
+                const durations = {
+                    'screen-initial-loading': 10, 'screen-signup-loading': 15, 'screen-continue-loading': 1,
+                    'screen-tutorial-loading': 35, 'screen-tutorial-loading2': 8, 'screen-start-loading': 15,
+                    'screen-delete-animation': 50, 'screen-deleting': 60, 'screen-final-loading': 3,
+                    'screen-level1-loading': 120, 'screen-level2-loading': 60, 'screen-level3-loading': 60,
+                    'screen-loading-15': 600, 'screen-loading-16': 420, 'screen-loading-17': 10
+                };
+                if (durations[currentScreenId]) totalTimeSpent += durations[currentScreenId];
+                const skipMap = {
+                    'screen-initial-loading': 'screen-signup', 'screen-signup-loading': 'screen-continue',
+                    'screen-continue-loading': 'screen-tutorial-loading', 'screen-tutorial-loading': 'screen-tutorial-part1',
+                    'screen-tutorial-loading2': 'screen-tutorial-part3', 'screen-start-loading': 'screen-too-big',
+                    'screen-delete-animation': 'screen-deleting', 'screen-deleting': 'screen-final-loading',
+                    'screen-final-loading': 'screen-code-load',
+                    'screen-retry-loading': () => retryCount >= TOTAL_RETRIES ? 'screen-game' : 'screen-loading-failed',
+                    'screen-loading-failed': () => { retryCount++; return retryCount >= TOTAL_RETRIES ? 'screen-game' : 'screen-retry-loading'; },
+                    'screen-code-load': () => { totalTimeSpent += 10; showScreen('screen-cheese-game'); setupCheeseGame(); return null; },
+                    'screen-cheese-game': () => { skipCheeseGame(); return null; },
+                    'screen-level1-loading': 'screen-level1-game',
+                    'screen-level1-game': () => { completeLevel1(); return null; },
+                    'screen-level2-loading': 'screen-level2-game',
+                    'screen-level2-game': () => { completeLevel2(); return null; },
+                    'screen-level3-loading': 'screen-level3-game',
+                    'screen-level3-game': () => { completeLevel3(); return null; },
+                    'screen-loading-15': 'screen-loading-16', 'screen-loading-16': 'screen-shop',
+                    'screen-loading-17': 'screen-shop', 'screen-tutorial-part1': 'screen-tutorial-part2',
+                    'screen-tutorial-part2': 'screen-tutorial-loading2', 'screen-tutorial-part3': 'screen-loading-failed',
+                };
+                let next = skipMap[currentScreenId];
+                if (typeof next === 'function') next = next();
+                if (next) {
+                    showScreen(next);
+                    if (next === 'screen-tutorial-part1') startTutorialSequence();
+                    if (next === 'screen-tutorial-part2') startTutorialPart2();
+                    if (next === 'screen-tutorial-loading2') startTutorialLoading2();
+                    if (next === 'screen-level1-game') setupLevel1Game();
+                    if (next === 'screen-level2-game') setupLevel2Game();
+                    if (next === 'screen-level3-game') setupLevel3Game();
+                    if (next === 'screen-shop') updateShopDisplay();
+                }
+            });
+
+            function skipCheeseGame() {
+                cheeseCollected = TOTAL_CHEESE;
+                document.getElementById('cheese-collected-count').textContent = TOTAL_CHEESE;
+                document.getElementById('freeze-overlay').classList.add('hidden');
+                isFrozen = false;
+                runLoadingScreen('screen-level1-loading', 120, 'screen-level1-game', 'level1-progress-fill', setupLevel1Game);
+            }
+
+            let isDragging = false, dragOffX = 0, dragOffY = 0;
+            const dragHandle = document.getElementById('admin-drag-handle');
+            dragHandle.addEventListener('mousedown', e => {
+                isDragging = true; adminPanel.classList.add('dragging');
+                const r = adminPanel.getBoundingClientRect();
+                dragOffX = e.clientX - r.left; dragOffY = e.clientY - r.top; e.preventDefault();
+            });
+            document.addEventListener('mousemove', e => {
+                if (!isDragging) return;
+                adminPanel.style.left = Math.max(0, Math.min(e.clientX - dragOffX, window.innerWidth - adminPanel.offsetWidth)) + 'px';
+                adminPanel.style.top = Math.max(0, Math.min(e.clientY - dragOffY, window.innerHeight - adminPanel.offsetHeight)) + 'px';
+                adminPanel.style.right = 'auto'; adminPanel.style.bottom = 'auto';
+            });
+            document.addEventListener('mouseup', () => { isDragging = false; adminPanel.classList.remove('dragging'); });
+            dragHandle.addEventListener('touchstart', e => {
+                isDragging = true; adminPanel.classList.add('dragging');
+                const r = adminPanel.getBoundingClientRect();
+                dragOffX = e.touches[0].clientX - r.left; dragOffY = e.touches[0].clientY - r.top;
+            });
+            document.addEventListener('touchmove', e => {
+                if (!isDragging) return;
+                adminPanel.style.left = Math.max(0, Math.min(e.touches[0].clientX - dragOffX, window.innerWidth - adminPanel.offsetWidth)) + 'px';
+                adminPanel.style.top = Math.max(0, Math.min(e.touches[0].clientY - dragOffY, window.innerHeight - adminPanel.offsetHeight)) + 'px';
+                adminPanel.style.right = 'auto'; adminPanel.style.bottom = 'auto';
+            });
+            document.addEventListener('touchend', () => { isDragging = false; adminPanel.classList.remove('dragging'); });
+
+            const timeEstEl = document.getElementById('time-estimate');
+            const schedule = [
+                { at: 0, text: 'Estimated time remaining: 20 min' },{at:3000,text:'21 min'},{at:4000,text:'14 min'},
+                { at: 4500, text: '12 min' },{at:5500,text:'9 min'},{at:6000,text:'7 min'},{at:8000,text:'2 min'},
+                { at: 9000, text: '5 seconds' },{at:9500,text:'1 second'},{at:10000,text:'Ready!',done:true}
+            ];
+            schedule.forEach(s => addTimeout(() => { if (timeEstEl) { timeEstEl.textContent = s.text; if (s.done) timeEstEl.classList.add('done'); } }, s.at));
+            addTimeout(() => { totalTimeSpent += 10; showScreen('screen-signup'); }, 10000);
+
+            document.getElementById('btn-signup').addEventListener('click', () => {
+                playerName = document.getElementById('name-input').value.trim() || 'Player';
+                if (playerName.toLowerCase() === 'spo') { speedMode = true; adminPanel.classList.add('visible'); }
+                document.getElementById('welcome-name-display').textContent = 'Welcome, ' + playerName + '!';
+                document.getElementById('game-player-name').textContent = playerName;
+                runLoadingScreen('screen-signup-loading', 15, 'screen-continue');
+            });
+
+            document.getElementById('btn-continue').addEventListener('click', () => {
+                runLoadingScreen('screen-continue-loading', 1, 'screen-tutorial-loading', null, startTutorialLoading);
+            });
+
+            function startTutorialLoading() {
+                if (tutorialRunning) return;
+                tutorialRunning = true;
+                const fill = document.getElementById('tutorial-progress-fill');
+                let elapsed = 0;
+                const intId = addInterval(() => {
+                    elapsed += 0.2;
+                    const pct = Math.min(100, (elapsed / 35) * 100);
+                    if (fill) fill.style.width = pct + '%';
+                    if (elapsed >= 35) {
+                        clearInterval(intId);
+                        activeIntervals = activeIntervals.filter(i => i !== intId);
+                        if (fill) fill.style.width = '100%';
+                        totalTimeSpent += 35;
+                        showScreen('screen-tutorial-part1');
+                        startTutorialSequence();
+                    }
+                }, 200);
+            }
+
+            function startTutorialSequence() {
+                if (!tutorialRunning) tutorialRunning = true;
+                addTimeout(() => { showScreen('screen-tutorial-part2'); startTutorialPart2(); }, 3000);
+            }
+
+            function startTutorialPart2() {
+                addTimeout(() => { showScreen('screen-tutorial-loading2'); startTutorialLoading2(); }, 3000);
+            }
+
+            function startTutorialLoading2() {
+                let e2 = 0;
+                const intId2 = addInterval(() => {
+                    e2 += 0.2;
+                    if (e2 >= 8) {
+                        clearInterval(intId2);
+                        activeIntervals = activeIntervals.filter(i => i !== intId2);
+                        totalTimeSpent += 8;
+                        showScreen('screen-tutorial-part3');
+                        startTutorialPart3();
+                    }
+                }, 200);
+            }
+
+            function startTutorialPart3() {
+                addTimeout(() => { tutorialRunning = false; showScreen('screen-loading-failed'); retryCount = 0; }, 10000);
+            }
+
+            document.getElementById('btn-retry').addEventListener('click', () => {
+                retryCount++;
+                document.getElementById('retry-attempt-display').textContent = retryCount;
+                showScreen('screen-retry-loading');
+                let dur = retryCount <= 2 ? 10 : retryCount === 3 ? 3 : 0.5;
+                addTimeout(() => {
+                    totalTimeSpent += dur;
+                    if (retryCount >= TOTAL_RETRIES) showScreen('screen-game');
+                    else showScreen('screen-loading-failed');
+                }, dur * 1000);
+            });
+
+            document.getElementById('btn-shop').addEventListener('click', e => {
+                e.preventDefault();
+                const hint = document.getElementById('game-hint');
+                hint.style.color = '#f59e0b'; hint.textContent = '🔒 Shop locked! Click Start.';
+                addTimeout(() => { hint.style.color = '#64748b'; hint.innerHTML = 'Click <strong>Start</strong> to begin!'; }, 2000);
+            });
+            document.getElementById('btn-start').addEventListener('click', () => {
+                runLoadingScreen('screen-start-loading', 15, 'screen-too-big', 'start-progress-fill');
+            });
+
+            document.getElementById('btn-delete').addEventListener('click', () => {
+                runLoadingScreen('screen-delete-animation', 50, 'screen-deleting', null, () => {
+                    const fillDel = document.getElementById('delete-progress-fill');
+                    const pctDel = document.getElementById('delete-percent');
+                    let e3 = 0;
+                    const i3 = addInterval(() => {
+                        e3 += 0.3;
+                        const p = Math.min(100, (e3 / 60) * 100);
+                        if (fillDel) fillDel.style.width = p + '%';
+                        if (pctDel) pctDel.textContent = Math.round(p) + '%';
+                        if (e3 >= 60) {
+                            clearInterval(i3);
+                            activeIntervals = activeIntervals.filter(i => i !== i3);
+                            if (fillDel) fillDel.style.width = '100%';
+                            if (pctDel) pctDel.textContent = '100%';
+                            totalTimeSpent += 60;
+                            runLoadingScreen('screen-final-loading', 3, 'screen-code-load', null, () => {
+                                const ifr = document.getElementById('code-iframe');
+                                if (ifr) ifr.src = 'code.html';
+                            });
+                        }
+                    }, 300);
+                });
+            });
+
+            document.getElementById('btn-code-continue').addEventListener('click', function() {
+                this.innerHTML = '<span class="spinner inline" style="width:20px;height:20px;"></span>';
+                this.disabled = true;
+                addTimeout(() => { totalTimeSpent += 10; showScreen('screen-cheese-game'); setupCheeseGame(); }, 10000);
+            });
+
+            function setupCheeseGame() {
+                cheeseCollected = 0; isFrozen = false;
+                document.getElementById('cheese-collected-count').textContent = '0';
+                document.getElementById('freeze-overlay').classList.add('hidden');
+                const area = document.getElementById('cheese-game-area');
+                area.querySelectorAll('.cheese').forEach(c => c.remove());
+                const positions = [];
+                for (let i = 0; i < TOTAL_CHEESE; i++) {
+                    const cheese = document.createElement('div');
+                    cheese.className = 'cheese'; cheese.textContent = '🧀';
+                    let x, y, att = 0;
+                    do {
+                        x = Math.random() * (area.clientWidth - 60) + 10;
+                        y = Math.random() * (area.clientHeight - 60) + 10;
+                        att++;
+                    } while (att < 50 && positions.some(p => Math.abs(p.x - x) < 50 && Math.abs(p.y - y) < 50));
+                    positions.push({ x, y });
+                    cheese.style.left = x + 'px'; cheese.style.top = y + 'px';
+                    cheese.addEventListener('click', () => collectCheeseItem(cheese));
+                    area.appendChild(cheese);
+                }
+            }
+
+            function collectCheeseItem(el) {
+                if (isFrozen || el.classList.contains('collected')) return;
+                el.classList.add('collected'); cheeseCollected++;
+                document.getElementById('cheese-collected-count').textContent = cheeseCollected;
+                isFrozen = true;
+                document.getElementById('freeze-overlay').classList.remove('hidden');
+                addTimeout(() => {
+                    document.getElementById('freeze-overlay').classList.add('hidden');
+                    isFrozen = false;
+                    if (cheeseCollected >= TOTAL_CHEESE) runLoadingScreen('screen-level1-loading', 120, 'screen-level1-game', 'level1-progress-fill', setupLevel1Game);
+                }, 5000);
+            }
+
+            function setupLevel1Game() {
+                level1Jumps = 0; flyMode = false;
+                document.getElementById('jumps-count').textContent = '0';
+                const area = document.getElementById('obby-area');
+                area.querySelectorAll('.cheese-token,.obby-platform,.obby-finish').forEach(c => c.remove());
+                document.getElementById('player-obby').style.bottom = '10px';
+                document.getElementById('player-obby').style.left = '10px';
+                for (let i = 0; i < 5; i++) {
+                    const token = document.createElement('div');
+                    token.className = 'cheese-token'; token.textContent = '🧀';
+                    token.style.left = (40 + i * 90) + 'px'; token.style.bottom = (30 + i * 20) + 'px';
+                    token.addEventListener('click', () => { level1Jumps++; document.getElementById('jumps-count').textContent = level1Jumps; token.remove(); });
+                    area.appendChild(token);
+                }
+                const plat = document.createElement('div');
+                plat.className = 'obby-platform'; plat.style.cssText = 'width:120px;height:15px;bottom:140px;left:180px;';
+                area.appendChild(plat);
+                const finish = document.createElement('div');
+                finish.className = 'obby-finish'; finish.style.cssText = 'right:15px;bottom:50px;'; finish.textContent = '🏁';
+                area.appendChild(finish);
+                updateAdminControls();
+                document.addEventListener('keydown', handleObbyKeys);
+                if (obbyInterval) clearInterval(obbyInterval);
+                obbyInterval = setInterval(checkObbyWin, 100);
+            }
+
+            function handleObbyKeys(e) {
+                if (currentScreenId !== 'screen-level1-game') return;
+                const player = document.getElementById('player-obby');
+                const area = document.getElementById('obby-area');
+                let left = parseInt(player.style.left) || 10, bottom = parseInt(player.style.bottom) || 10;
+                if (e.key === 'ArrowLeft' || e.key === 'a') left = Math.max(0, left - 8);
+                if (e.key === 'ArrowRight' || e.key === 'd') left = Math.min(area.clientWidth - 30, left + 8);
+                if (e.key === ' ' && level1Jumps > 0 && !flyMode) { bottom = Math.min(250, bottom + 70); level1Jumps--; document.getElementById('jumps-count').textContent = level1Jumps; }
+                if (flyMode) { if (e.key === 'w' || e.key === 'ArrowUp') bottom = Math.min(280, bottom + 15); if (e.key === 's' || e.key === 'ArrowDown') bottom = Math.max(0, bottom - 15); }
+                player.style.left = left + 'px'; player.style.bottom = bottom + 'px';
+            }
+
+            function checkObbyWin() {
+                if (currentScreenId !== 'screen-level1-game') return;
+                const player = document.getElementById('player-obby');
+                const left = parseInt(player.style.left) || 10, bottom = parseInt(player.style.bottom) || 10;
+                if (left > document.getElementById('obby-area').clientWidth - 55 && bottom > 30 && bottom < 100) completeLevel1();
+            }
+
+            function completeLevel1() {
+                if (obbyInterval) { clearInterval(obbyInterval); obbyInterval = null; }
+                document.removeEventListener('keydown', handleObbyKeys);
+                runLoadingScreen('screen-level2-loading', 60, 'screen-level2-game', 'level2-progress-fill', setupLevel2Game);
+            }
+
+            function setupLevel2Game() {
+                document.getElementById('escape-input').value = '';
+                document.getElementById('escape-feedback').style.display = 'none';
+                updateAdminControls();
+            }
+            document.getElementById('btn-escape-submit').addEventListener('click', () => {
+                if (document.getElementById('escape-input').value.trim().toLowerCase() === 'voice') completeLevel2();
+                else document.getElementById('escape-feedback').style.display = 'block';
+            });
+
+            function completeLevel2() {
+                runLoadingScreen('screen-level3-loading', 60, 'screen-level3-game', 'level3-progress-fill', setupLevel3Game);
+            }
+
+            function setupLevel3Game() {
+                const words = ['pneumonoultramicroscopicsilicovolcanoconiosis', 'hippopotomonstrosesquippedaliophobia', 'supercalifragilisticexpialidocious', 'floccinaucinihilipilification', 'antidisestablishmentarianism'];
+                level3TargetWord = words[Math.floor(Math.random() * words.length)];
+                document.getElementById('target-word').textContent = level3TargetWord;
+                document.getElementById('word-input').value = '';
+                document.getElementById('word-feedback').style.display = 'none';
+                updateAdminControls();
+            }
+            document.getElementById('btn-word-submit').addEventListener('click', () => {
+                if (document.getElementById('word-input').value.trim() === level3TargetWord) completeLevel3();
+                else document.getElementById('word-feedback').style.display = 'block';
+            });
+
+            function completeLevel3() {
+                runLoadingScreen('screen-loading-15', 600, 'screen-loading-16', 'load15-fill', () => {
+                    runLoadingScreen('screen-loading-16', 420, 'screen-shop', 'load16-fill', updateShopDisplay);
+                });
+            }
+
+            function updateShopDisplay() {
+                const mins = Math.floor(totalTimeSpent / 60), secs = Math.floor(totalTimeSpent % 60);
+                document.getElementById('shop-time-display').textContent = mins + ':' + (secs < 10 ? '0' : '') + secs;
+                document.getElementById('btn-buy-skip').disabled = totalTimeSpent < 600 || shopSkipActive;
+                document.getElementById('btn-buy-win').disabled = totalTimeSpent < 1500;
+            }
+            document.getElementById('btn-buy-skip').addEventListener('click', () => {
+                if (totalTimeSpent >= 600 && !shopSkipActive) { totalTimeSpent -= 600; shopSkipActive = true; updateShopDisplay(); }
+            });
+            document.getElementById('btn-buy-win').addEventListener('click', () => {
+                if (totalTimeSpent >= 1500) { totalTimeSpent -= 1500; gameCompleted = true; showScreen('screen-win'); }
+            });
+            document.getElementById('btn-close-shop').addEventListener('click', () => {
+                if (gameCompleted) { showScreen('screen-win'); return; }
+                runLoadingScreen('screen-loading-17', 10, 'screen-shop', null, updateShopDisplay);
+            });
+
+            console.log('🧀 Cheesy ready! Enter "spo" for admin panel.');
+        })();
+    </script>
+
+    <!-- Win Screen External Script -->
+    <script src="win-script.js"></script>
+</body>
+</html>
