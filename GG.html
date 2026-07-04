@@ -13,6 +13,9 @@
             align-items: center;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             font-family: Arial, sans-serif;
+            flex-direction: column;
+            position: relative;
+            overflow-x: hidden;
         }
         
         .game-container {
@@ -52,22 +55,195 @@
             font-size: 5rem;
             display: none;
         }
+
+        /* Hidden secret code - shown after 20 clicks but still uncopyable */
+        #secretReveal {
+            position: fixed;
+            bottom: 5px;
+            right: 5px;
+            font-size: 12px;
+            color: rgba(255,255,255,0.8);
+            background: rgba(0,0,0,0.8);
+            padding: 5px;
+            border-radius: 5px;
+            z-index: 200;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            display: none;
+            pointer-events: none;
+        }
+
+        /* Invisible textbox */
+        #modInput {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px;
+            font-size: 1rem;
+            border-radius: 5px;
+            border: 2px solid rgba(255,255,255,0.3);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            font-family: monospace;
+            text-align: center;
+            width: 300px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            z-index: 100;
+        }
+
+        #modInput.visible {
+            opacity: 0.8;
+            pointer-events: auto;
+        }
+
+        #rewardDisplay {
+            position: fixed;
+            top: 60%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            font-family: monospace;
+            text-align: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+            z-index: 101;
+            color: white;
+            word-break: break-all;
+            background: rgba(0,0,0,0.7);
+            padding: 15px;
+            border-radius: 10px;
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+
+        #rewardDisplay.show {
+            opacity: 0.5;
+        }
     </style>
 </head>
 <body>
+    <!-- Hidden code element - revealed but still uncopyable after 20 clicks -->
+    <div id="secretReveal">59929eok0ehel0n2ov7xpamy7uq038lh3k</div>
+
     <div class="game-container">
         <div class="trophy">😭</div>
         <div class="win-message">You actually fell for it LOL</div>
         <button class="play-button" onclick="win()">Get trolled</button>
     </div>
 
+    <!-- Invisible textbox in the middle -->
+    <input type="text" id="modInput" placeholder="" maxlength="50">
+    
+    <!-- Reward display -->
+    <div id="rewardDisplay"></div>
+
     <script>
+        // Click tracking for 20 clicks in 7 seconds anywhere
+        let clickCount20 = 0;
+        let clickTimer20 = null;
+
+        document.addEventListener('click', function(e) {
+            // Don't count clicks on buttons or inputs
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+
+            clickCount20++;
+            
+            if (clickTimer20) clearTimeout(clickTimer20);
+            
+            clickTimer20 = setTimeout(() => {
+                clickCount20 = 0;
+            }, 7000);
+
+            if (clickCount20 >= 20) {
+                clickCount20 = 0;
+                // Show the code but keep it uncopyable
+                document.getElementById('secretReveal').style.display = 'block';
+            }
+        });
+
+        // 3 clicks in 1.5 seconds on the middle area to reveal textbox
+        let middleClickCount = 0;
+        let middleClickTimer = null;
+
+        document.addEventListener('click', function(e) {
+            // Check if click is near the middle of the screen
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            const clickX = e.clientX;
+            const clickY = e.clientY;
+            
+            // Middle area: within 150px of center
+            const isMiddle = Math.abs(clickX - centerX) < 150 && Math.abs(clickY - centerY) < 150;
+            
+            // Don't count clicks on buttons or inputs
+            if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT') return;
+            
+            if (isMiddle) {
+                middleClickCount++;
+                
+                if (middleClickTimer) clearTimeout(middleClickTimer);
+                
+                middleClickTimer = setTimeout(() => {
+                    middleClickCount = 0;
+                }, 1500);
+
+                if (middleClickCount >= 3) {
+                    middleClickCount = 0;
+                    document.getElementById('modInput').classList.add('visible');
+                }
+            }
+        });
+
+        // Prevent copying on the whole page
+        document.addEventListener('copy', function(e) {
+            const selection = window.getSelection().toString();
+            const secretText = '59929eok0ehel0n2ov7xpamy7uq038lh3k';
+            const rewardText = 'bmaü/<f0g>>';
+            if (selection.includes(secretText) || selection.includes(rewardText)) {
+                e.preventDefault();
+                e.clipboardData.setData('text/plain', '');
+            }
+        });
+
+        // Prevent right-click on secret and reward
+        document.addEventListener('contextmenu', function(e) {
+            if (e.target.id === 'secretReveal' || e.target.id === 'rewardDisplay') {
+                e.preventDefault();
+            }
+        });
+
+        // Check code when Enter is pressed
+        document.getElementById('modInput').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const input = document.getElementById('modInput').value.trim();
+                const hiddenCode = document.getElementById('secretReveal').textContent.trim();
+                const rewardDisplay = document.getElementById('rewardDisplay');
+
+                if (input === hiddenCode) {
+                    rewardDisplay.textContent = 'bmaü/<f0g>>';
+                    rewardDisplay.classList.add('show');
+                    document.getElementById('modInput').classList.remove('visible');
+                    document.getElementById('modInput').value = '';
+                } else {
+                    document.getElementById('modInput').value = '';
+                    document.getElementById('modInput').classList.remove('visible');
+                }
+            }
+        });
+
         function win() {
             document.querySelector('.play-button').style.display = 'none';
             document.querySelector('.win-message').style.display = 'block';
             document.querySelector('.trophy').style.display = 'block';
             
-            // Party time!
             for (let i = 0; i < 50; i++) {
                 createConfetti();
             }
